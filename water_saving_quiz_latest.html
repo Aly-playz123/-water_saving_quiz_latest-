@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water-Saving Challenge</title>
+<style>
+:root{font-family:Arial,sans-serif;color:#17324d}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#dff6ff,#8ed8f8);transition:background .5s}
+body[data-theme="ocean"]{background:linear-gradient(135deg,#dff6ff,#73c9ee)}
+body[data-theme="forest"]{background:linear-gradient(135deg,#e1f5df,#83c98a)}
+body[data-theme="sunny"]{background:linear-gradient(135deg,#fff6c9,#ffd36e)}
+body[data-theme="purple"]{background:linear-gradient(135deg,#f1e4ff,#c6a3f5)}
+.card{width:min(680px,100%);background:#ffffffed;border:2px solid #ffffff;border-radius:25px;padding:clamp(20px,5vw,36px);box-shadow:0 12px 35px #24445b22;text-align:center}
+h1{margin:5px 0 10px;font-size:clamp(1.7rem,5vw,2.4rem)}
+p{line-height:1.5}
+label{display:block;text-align:left;font-weight:bold;margin:13px 0 6px}
+input,select,button{font:inherit}
+input,select{width:100%;padding:12px;border:1px solid #b9cbd8;border-radius:12px;background:white}
+button{border:0;border-radius:13px;padding:12px 18px;background:#087db5;color:white;font-weight:bold;cursor:pointer;margin:6px}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.secondary{background:#e7f2f8;color:#17435b}
+button.choice{display:block;width:100%;text-align:left;background:#edf6fb;color:#17324d;border:2px solid transparent;margin:10px 0;padding:14px}
+button.choice:hover{border-color:#1689bd}
+button.choice.correct{background:#d9f8e2;border-color:#279b54}
+button.choice.wrong{background:#ffe1e1;border-color:#d64d4d}
+.hidden{display:none!important}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1;min-width:120px}
+.avatar{font-size:3.2rem;margin:8px}
+.small{color:#536b7b;font-size:.92rem}
+.progress{height:10px;background:#e4edf2;border-radius:20px;overflow:hidden;margin:18px 0}
+.progress span{display:block;height:100%;width:0;background:#1197c8;transition:width .3s}
+#feedback{padding:12px;border-radius:12px;margin:12px 0;font-weight:bold;background:#edf6fb}
+#celebration{position:relative;overflow:hidden;min-height:180px}
+.confetti{position:absolute;top:-25px;font-size:24px;animation:fall 3.4s linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(300px) rotate(700deg);opacity:0}}
+.cannon{display:inline-block;font-size:2.3rem;animation:pop .65s infinite alternate}
+@keyframes pop{to{transform:translateY(-12px) rotate(12deg)}}
+.gift{font-size:4rem;animation:bounce .8s infinite alternate}
+@keyframes bounce{to{transform:translateY(-10px) scale(1.08)}}
+</style>
+</head>
+<body data-theme="ocean">
+<main class="card">
+<section id="home">
+<div class="avatar" id="homeAvatar">💧</div>
+<h1>💦 Water-Saving Challenge</h1>
+<p>Ready to become a Water Saver Champion?</p>
+<label for="username">Your username</label>
+<input id="username" maxlength="18" placeholder="Enter your name" value="">
+<div class="row">
+<div><label for="avatar">Choose your avatar</label><select id="avatar"><option>💧 Water Drop</option><option>🐬 Dolphin</option><option>🐢 Turtle</option><option>🐳 Whale</option><option>🐸 Frog</option><option>🌱 Plant</option><option>🦋 Butterfly</option></select></div>
+<div><label for="theme">Choose a theme</label><select id="theme"><option value="ocean">🌊 Ocean Blue</option><option value="forest">🌳 Forest Green</option><option value="sunny">☀️ Sunny Yellow</option><option value="purple">💜 Soft Purple</option></select></div>
+</div>
+<label for="volume">Sound volume: <span id="volLabel">60%</span></label>
+<input id="volume" type="range" min="0" max="100" value="60">
+<label><input id="musicToggle" type="checkbox" checked style="width:auto"> Play calm background music</label>
+<p class="small">10 questions • A–D choices shuffled every round • No repeated questions in one round</p>
+<button id="start">START GAME ▶</button>
+</section>
+
+<section id="quiz" class="hidden">
+<div class="row"><div id="playerLabel"></div><div id="scoreLabel">Score: 0</div></div>
+<div class="progress"><span id="bar"></span></div>
+<p class="small" id="counter"></p>
+<h2 id="question"></h2>
+<div id="choices"></div>
+<div id="feedback" class="hidden" aria-live="polite"></div>
+<button id="next" class="hidden">Next question ➜</button>
+</section>
+
+<section id="end" class="hidden">
+<div id="celebration">
+<div class="cannon">🎉</div> <div class="cannon">🎊</div>
+<h1>🏆 WATER SAVER CHAMPION!</h1>
+<p id="result"></p>
+<div class="gift">🎁</div>
+<p>You unlocked a special avatar!</p>
+<h2>🦦 Water Guardian Otter</h2>
+<button id="claim">CLAIM GIFT & RETURN HOME 💖</button>
+<button id="celebrateAgain" class="secondary">Celebrate Again! 🎉</button>
+</div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const original=[
+["What should you do while brushing your teeth?",["Leave the faucet running","Turn off the faucet","Use more water","Brush with the shower on"],1],
+["What should you do if you notice a leaking faucet?",["Ignore it","Play with the water","Tell an adult so it can be repaired","Turn it on more"],2],
+["Which habit helps save water when bathing?",["Take shorter showers","Fill the tub every time","Keep the shower running","Take extra-long showers"],0],
+["What can you do with leftover clean water?",["Pour it down the drain","Use it to water plants","Throw it away","Leave it outside"],1],
+["Why is saving water important during El Niño?",["It makes oceans disappear","It causes more rain","Dry conditions can reduce available water","It makes water unlimited"],2],
+["Which laundry habit saves water?",["Wash one shirt at a time","Run a full load when possible","Keep washing machine running all day","Rinse clothes repeatedly"],1],
+["How can you save water when washing dishes?",["Let the tap run continuously","Use a basin instead of running water","Wash each dish for a long time","Use a hose"],1],
+["When is a good time to water outdoor plants?",["At midday in strong heat","During the hottest hour","During cooler hours","Whenever it rains heavily"],2],
+["Which is a natural source of freshwater?",["Ocean","River","Swimming pool","Saltwater bay"],1],
+["What does water conservation mean?",["Using water without limits","Avoiding all water","Saving only bottled water","Using water wisely and avoiding waste"],3]
+];
+let questions=[],index=0,score=0,volume=.6,audio=null,musicTimer=null,musicOn=true,unlocked=false;
+function sound(freq,dur,type="sine"){if(!audio||volume===0)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.0001,audio.currentTime);g.gain.exponentialRampToValueAtTime(Math.max(.0001,volume*.12),audio.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur+.03)}
+function startMusic(){stopMusic();if(!audio||!musicOn||volume===0)return;let n=0;const notes=[261.6,329.6,392,329.6,293.7,349.2,440,349.2];musicTimer=setInterval(()=>{sound(notes[n++%notes.length],.55)},650)}
+function stopMusic(){if(musicTimer)clearInterval(musicTimer);musicTimer=null}
+function applyTheme(){document.body.dataset.theme=$("theme").value}
+$("theme").addEventListener("change",applyTheme);
+$("avatar").addEventListener("change",()=>{$("homeAvatar").textContent=$("avatar").value.split(" ")[0]});
+$("volume").addEventListener("input",()=>{$("volLabel").textContent=$("volume").value+"%";volume=+$("volume").value/100});
+$("musicToggle").addEventListener("change",()=>{musicOn=$("musicToggle").checked;if(musicOn)startMusic();else stopMusic()});
+function show(which){["home","quiz","end"].forEach(id=>$(id).classList.toggle("hidden",id!==which))}
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+$("start").onclick=()=>{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==="suspended")audio.resume();volume=+$("volume").value/100;musicOn=$("musicToggle").checked;startMusic();const name=$("username").value.trim()||"Water Saver";$("playerLabel").textContent="💧 "+name;questions=shuffle(original.map(q=>{let opts=shuffle(q[1].map((text,i)=>({text,correct:i===q[2]})));return{question:q[0],opts}}));index=0;score=0;show("quiz");render()};
+function render(){$("scoreLabel").textContent="Score: "+score;$("counter").textContent=`Question ${index+1} of ${questions.length}`;$("bar").style.width=(index/questions.length*100)+"%";$("question").textContent=questions[index].question;$("choices").innerHTML="";$("feedback").classList.add("hidden");$("next").classList.add("hidden");questions[index].opts.forEach((o,i)=>{let b=document.createElement("button");b.className="choice";b.textContent=String.fromCharCode(65+i)+". "+o.text;b.onclick=()=>answer(i);$("choices").appendChild(b)})}
+function answer(selected){const q=questions[index],correct=q.opts.findIndex(o=>o.correct);[...$("choices").children].forEach((b,i)=>{b.disabled=true;if(i===correct)b.classList.add("correct");if(i===selected&&i!==correct)b.classList.add("wrong")});if(selected===correct){score++;$("feedback").textContent="✅ Correct! Great job!";sound(660,.16);setTimeout(()=>sound(880,.22),130)}else{$("feedback").textContent="❌ Not quite! The correct answer is "+String.fromCharCode(65+correct)+". "+q.opts[correct].text;sound(180,.32,"triangle")} $("feedback").classList.remove("hidden");$("scoreLabel").textContent="Score: "+score;$("next").classList.remove("hidden");$("next").textContent=index===questions.length-1?"See my result 🏆":"Next question ➜"}
+$("next").onclick=()=>{index++;if(index<questions.length)render();else finish()};
+function confetti(){const box=$("celebration");box.querySelectorAll(".confetti").forEach(x=>x.remove());const bits=["🎉","🎊","✨","💧","🌟","🎈"];for(let i=0;i<70;i++){let s=document.createElement("span");s.className="confetti";s.textContent=bits[Math.floor(Math.random()*bits.length)];s.style.left=Math.random()*100+"%";s.style.animationDelay=Math.random()*1.5+"s";box.appendChild(s)}}
+function finish(){stopMusic();show("end");$("result").textContent=`${$("username").value.trim()||"Water Saver"}, you scored ${score} out of 10! Every drop counts!`;confetti();[523,659,784,1047].forEach((f,i)=>setTimeout(()=>sound(f,.25),i*140))}
+$("celebrateAgain").onclick=()=>{confetti();sound(784,.3)};
+$("claim").onclick=()=>{unlocked=true;let opt=document.createElement("option");opt.textContent="🦦 Water Guardian Otter";$("avatar").appendChild(opt);$("avatar").value=opt.textContent;$("homeAvatar").textContent="🦦";stopMusic();show("home")};
+applyTheme();
+</script>
+</body>
+</html>
